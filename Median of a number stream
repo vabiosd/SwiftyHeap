@@ -1,0 +1,149 @@
+struct Heap<Element> {
+
+    var arr: [Element]
+    let priorityFunc: (Element, Element) -> Bool
+
+    init(arr: [Element], priorityFunc: @escaping (Element, Element) -> Bool) {
+        self.arr = arr
+        self.priorityFunc = priorityFunc
+        buildHeap()
+    }
+
+    mutating func buildHeap() {
+        for i in (0..<arr.count/2).reversed() {
+            heapify(idx: i)
+        }
+    }
+
+    mutating func heapify(idx: Int) {
+        if arr.count == 0 {
+            return
+        }
+        let higherPriorityIndex = higherPriority(idx: idx)
+        if higherPriorityIndex == idx {
+            return
+        } else {
+            swap(idx1: higherPriorityIndex, idx2: idx)
+            heapify(idx: higherPriorityIndex)
+        }
+    }
+
+    mutating func swap(idx1: Int, idx2: Int) {
+        let temp = arr[idx1]
+        arr[idx1] = arr[idx2]
+        arr[idx2] = temp
+    }
+
+    func higherPriority(idx: Int) -> Int {
+        var ans = idx
+        if idx * 2 + 1 < arr.count && isHigherPriority(idx1: idx * 2 + 1, idx2: ans) {
+            ans = idx * 2 + 1
+        }
+
+        if idx * 2 + 2 < arr.count && isHigherPriority(idx1: idx * 2 + 2, idx2: ans) {
+            ans = idx * 2 + 2
+        }
+        return ans
+    }
+
+    func isHigherPriority(idx1: Int, idx2: Int) -> Bool {
+        return priorityFunc(arr[idx1], arr[idx2])
+    }
+
+
+    mutating func insertElement(ele: Element) {
+        arr.append(ele)
+        siftUp(idx: arr.count - 1)
+    }
+
+    mutating func siftUp(idx: Int) {
+        if idx == 0 {
+            return
+        }
+        let parent = (idx - 1) / 2
+        if isHigherPriority(idx1: idx, idx2: parent) {
+            swap(idx1: idx, idx2: parent)
+            siftUp(idx: parent)
+        }
+    }
+
+    func peek() -> Element? {
+        if arr.isEmpty {
+            return nil
+        }
+        return arr.first!
+    }
+
+    mutating func pop() -> Element? {
+        if arr.isEmpty {
+            return nil
+        }
+        let min = arr[0]
+        arr[0] = arr[arr.count - 1]
+        arr.removeLast()
+        heapify(idx: 0)
+        return min
+    }
+
+
+}
+
+extension Heap where Element : Equatable {
+    mutating func removeEle(ele: Element) {
+        if let idx = arr.firstIndex(of: ele) {
+            swap(idx1: idx, idx2: arr.count - 1)
+            arr.removeLast()
+            heapify(idx: idx)
+        }
+    }
+}
+
+class MedianFinder {
+
+    /** initialize your data structure here. */
+    var maxHeap: Heap<Int> = Heap(arr: [], priorityFunc: >)
+    var minHeap: Heap<Int> = Heap(arr: [], priorityFunc: <)
+    var count = 0
+    init() {
+    }
+
+    func addNum(_ num: Int) {
+        if maxHeap.arr.isEmpty {
+            maxHeap.insertElement(ele: num)
+        } else {
+            if maxHeap.arr.count == minHeap.arr.count {
+                if  num <= minHeap.peek()! {
+                    maxHeap.insertElement(ele: num)
+                } else  {
+                    maxHeap.insertElement(ele: minHeap.pop()!)
+                    minHeap.insertElement(ele: num)
+                }
+            } else {
+                if minHeap.arr.isEmpty {
+                    if num >= maxHeap.peek()! {
+                        minHeap.insertElement(ele: num)
+                    } else {
+                        maxHeap.insertElement(ele: num)
+                        minHeap.insertElement(ele: maxHeap.pop()!)
+                    }
+                } else if num > minHeap.peek()! {
+                    minHeap.insertElement(ele: num)
+                } else {
+                    maxHeap.insertElement(ele: num)
+                    minHeap.insertElement(ele: maxHeap.pop()!)
+                }
+            }
+        }
+        count += 1
+    }
+    
+    
+    func findMedian() -> Double {
+        if count%2 == 0 {
+            return (Double(maxHeap.peek()!) + Double(minHeap.peek()!))/2.0
+        } else {
+            return Double(maxHeap.peek()!)
+        }
+    }
+}
+    
